@@ -18,6 +18,16 @@
     return actor;
   }
 
+
+  /**
+   * This is used to prevent optimization to make certain functions easier to
+   * test.
+   */
+  Tweenable.prototype.formula.fakeLinear = function (pos) {
+    return pos;
+  };
+
+
   (function () {
 
     module('applyVendorBoilerplates');
@@ -110,7 +120,8 @@
           ,['  animation-name: ANIM_NAME-x-keyframes;'
           ,'  animation-duration: 0ms;'
           ,'  animation-delay: 0ms;'
-          ,'  animation-fill-mode: forwards;'].join('\n')
+          ,'  animation-fill-mode: forwards;'
+          ,'  animation-timing-function: linear;'].join('\n')
           ,'Class properties for Webkit were generated');
     });
 
@@ -132,7 +143,8 @@
           ,['  -webkit-animation-name: ANIM_NAME-x-keyframes;'
           ,'  -webkit-animation-duration: 0ms;'
           ,'  -webkit-animation-delay: 0ms;'
-          ,'  -webkit-animation-fill-mode: forwards;'].join('\n')
+          ,'  -webkit-animation-fill-mode: forwards;'
+          ,'  -webkit-animation-timing-function: linear;'].join('\n')
           ,'Class properties for Webkit were generated');
     });
 
@@ -158,6 +170,7 @@
           ,'  animation-duration: 0ms;'
           ,'  animation-delay: 0ms;'
           ,'  animation-fill-mode: forwards;'
+          ,'  animation-timing-function: linear;'
           ,'}'].join('\n')
           ,'Class properties were generated');
     });
@@ -182,54 +195,9 @@
           ,'  -webkit-animation-duration: 0ms;'
           ,'  -webkit-animation-delay: 0ms;'
           ,'  -webkit-animation-fill-mode: forwards;'
+          ,'  -webkit-animation-timing-function: linear;'
           ,'}'].join('\n')
           ,'Class properties for Webkit were generated');
-    });
-
-
-    module('generateOptimizedKeyframes');
-
-
-    test('Generates optimized keyframe data for an Actor',
-        function () {
-
-      var kapi = new Kapi();
-      var actor1 = setupTestActor(kapi);
-
-      actor1
-        .keyframe(0,    { 'x': 0  })
-        .keyframe(1000, { 'x': 10 });
-
-      var keyframeData =
-          Kapi._private.toCSS.generateOptimizedKeyframes(actor1, 'easeInQuad');
-
-      equal(
-          keyframeData
-          ,['from { x: 0; VENDORanimation-timing-function: cubic-bezier(easeInQuad); }'
-          ,'to { x: 10; VENDORanimation-timing-function: cubic-bezier(easeInQuad); }']
-          .join('\n')
-          ,'Optimized bezier-cubic CSS was generated');
-    });
-
-
-    module('getOptimizedEasingFormula');
-
-
-    test('Can lookup cubic-bezier equivalent of a valid Penner formula',
-        function () {
-
-      var kapi = new Kapi();
-      var actor1 = setupTestActor(kapi);
-
-      actor1
-        .keyframe(0,    { 'x': 0  }, { 'x': 'easeInQuad' })
-        .keyframe(1000, { 'x': 10 }, { 'x': 'easeInQuad' });
-
-      var cubicBezier =
-          Kapi._private.toCSS.getOptimizedEasingFormula(actor1);
-
-      equal(cubicBezier, '.55,.085,.68,.53'
-          ,'cubic-bezier coordinates were found');
     });
 
 
@@ -244,7 +212,7 @@
 
       actor1
         .keyframe(0,    { 'x': 0   })
-        .keyframe(1000, { 'x': 100 });
+        .keyframe(1000, { 'x': 100 }, { 'x': 'fakeLinear' });
 
       var keyframeData = Kapi._private.toCSS.generateBoilerplatedKeyframes(
           actor1, 'ANIM_NAME', 10);
@@ -279,7 +247,7 @@
 
       actor1
         .keyframe(0,    { 'x': 0   })
-        .keyframe(1000, { 'x': 100 });
+        .keyframe(1000, { 'x': 100 }, { 'x': 'fakeLinear' });
 
       var keyframeData =
           Kapi._private.toCSS.generateActorKeyframes(actor1, 10, 'x');
@@ -311,7 +279,7 @@
 
       actor1
         .keyframe(0,    { 'x': 0, 'y': 5    })
-        .keyframe(1000, { 'x': 100, 'y': 15 });
+        .keyframe(1000, { 'x': 100, 'y': 15 }, { 'x': 'fakeLinear' });
 
       var keyframeData =
           Kapi._private.toCSS.generateActorKeyframes(actor1, 10, 'x');
@@ -343,8 +311,8 @@
 
       actor1
         .keyframe(0,    { 'x': 0           })
-        .keyframe(500,  { 'y': 0           })
-        .keyframe(1000, { 'x': 10, 'y': 10 });
+        .keyframe(500,  { 'y': 0           }, { 'y': 'fakeLinear' })
+        .keyframe(1000, { 'x': 10, 'y': 10 }, { 'y': 'fakeLinear' });
 
       var keyframeData =
           Kapi._private.toCSS.generateActorKeyframes(actor1, 10, 'y');
@@ -370,8 +338,8 @@
 
       actor1
         .keyframe(0,    { 'x': 0, 'y': 0 })
-        .keyframe(500,  { 'y': 10        })
-        .keyframe(1000, { 'x': 10        });
+        .keyframe(500,  { 'y': 10        }, { 'y': 'fakeLinear' })
+        .keyframe(1000, { 'x': 10        }, { 'y': 'fakeLinear' });
 
       var keyframeData =
           Kapi._private.toCSS.generateActorKeyframes(actor1, 10, 'y');
@@ -384,10 +352,6 @@
           ,'  30% {y:6;}'
           ,'  40% {y:8;}'
           ,'  50% {y:10;}'
-          ,'  60% {y:10;}'
-          ,'  70% {y:10;}'
-          ,'  80% {y:10;}'
-          ,'  90% {y:10;}'
           ,'  100% {y:10;}'].join('\n')
           ,'The trailing wait was simulated');
     });
@@ -401,13 +365,67 @@
 
       actor1
         .keyframe(0,    { 'x': 0   })
-        .keyframe(1000, { 'x': 100 });
+        .keyframe(1000, { 'x': 100 }, { 'x': 'fakeLinear' });
 
       var keyframeData =
           Kapi._private.toCSS.generateActorKeyframes(actor1, 100, 'x');
 
       equal(keyframeData.split('\n').length, 101
           ,'Correct number of steps were interpolated');
+    });
+
+
+    test('Can mix optimized and un-optimized segments, optimized first',
+        function () {
+
+      var kapi = new Kapi();
+      var actor1 = setupTestActor(kapi);
+
+      actor1
+        .keyframe(0,    { 'x': 0  })
+        .keyframe(500,  { 'x': 10 })
+        .keyframe(1000, { 'x': 20 }, { 'x': 'fakeLinear' });
+
+      var keyframeData =
+          Kapi._private.toCSS.generateActorKeyframes(actor1, 10, 'x');
+
+      equal(
+          keyframeData
+          ,['  0% {x:0;VENDORanimation-timing-function: cubic-bezier(.25,.25,.75,.75);}'
+          ,'  50% {x:10;}'
+          ,'  60% {x:12;}'
+          ,'  70% {x:14;}'
+          ,'  80% {x:16;}'
+          ,'  90% {x:18;}'
+          ,'  100% {x:20;}'].join('\n')
+          ,'Keyframe types were mixed');
+    });
+
+
+    test('Can mix optimized and un-optimized segments, optimized last',
+        function () {
+
+      var kapi = new Kapi();
+      var actor1 = setupTestActor(kapi);
+
+      actor1
+        .keyframe(0,    { 'x': 0  })
+        .keyframe(500,  { 'x': 10 }, { 'x': 'fakeLinear' })
+        .keyframe(1000, { 'x': 20 });
+
+      var keyframeData =
+          Kapi._private.toCSS.generateActorKeyframes(actor1, 10, 'x');
+
+      equal(
+          keyframeData
+          ,['  0% {x:0;}'
+          ,'  10% {x:2;}'
+          ,'  20% {x:4;}'
+          ,'  30% {x:6;}'
+          ,'  40% {x:8;}'
+          ,'  50% {x:10;VENDORanimation-timing-function: cubic-bezier(.25,.25,.75,.75);}'
+          ,'  100% {x:20;}'].join('\n')
+          ,'Keyframe types were mixed');
     });
 
 
@@ -671,6 +689,106 @@
 
       equal(animDuration, '  PREFIXanimation-fill-mode: forwards;'
           ,'Generated CSS animation-fill-mode');
+    });
+
+
+    module('generateAnimationTimingFunctionProperty');
+
+
+    test('Can generate the CSS timing function of an animation',
+        function () {
+
+    var animDuration =
+        Kapi._private.toCSS.generateAnimationTimingFunctionProperty(
+            'PREFIX');
+
+      equal(animDuration, '  PREFIXanimation-timing-function: linear;'
+          ,'Generated CSS animation-timing-function');
+    });
+
+
+    module('canOptimizeKeyframeProperty');
+
+
+    test('Detects a property that can be optimized',
+        function () {
+
+      var kapi = new Kapi();
+      var actor1 = setupTestActor(kapi);
+
+      actor1
+        .keyframe(0,    { 'x': 0  })
+        .keyframe(1000, { 'x': 10 }, { 'x': 'easeInQuad' });
+
+      var canBeOptimized = Kapi._private.toCSS.canOptimizeKeyframeProperty(
+        actor1.getKeyframeProperty('x', 0));
+
+      equal(canBeOptimized, true
+          ,'Detected property that can be optimized');
+    });
+
+
+    test('Detects a property that cannot be optimized',
+        function () {
+
+      var kapi = new Kapi();
+      var actor1 = setupTestActor(kapi);
+
+      actor1
+        .keyframe(0,    { 'x': 0  })
+        .keyframe(1000, { 'x': 10 }, { 'x': 'bounce' });
+
+      var canBeOptimized = Kapi._private.toCSS.canOptimizeKeyframeProperty(
+        actor1.getKeyframeProperty('x', 0));
+
+      equal(canBeOptimized, false
+          ,'Detected property that cannot be optimized');
+    });
+
+
+    module('generateOptimizedKeyframeSegment');
+
+
+    test('Generates an optimized segment',
+        function () {
+
+      var kapi = new Kapi();
+      var actor1 = setupTestActor(kapi);
+
+      actor1
+        .keyframe(0,    { 'x': 0  })
+        .keyframe(1000, { 'x': 10 }, { 'x': 'easeInQuad' });
+
+      var optimizedSegment =
+          Kapi._private.toCSS.generateOptimizedKeyframeSegment(
+              actor1.getKeyframeProperty('x', 0), 0, 100);
+
+      equal(optimizedSegment
+        ,['  0% {x:0;VENDORanimation-timing-function: cubic-bezier(.55,.085,.68,.53);}'
+        ,'  100% {x:10;}'].join('\n')
+        ,'Generated optimized segement');
+    });
+
+
+    test('Generates an optimized transform segment',
+        function () {
+
+      var kapi = new Kapi();
+      var actor1 = setupTestActor(kapi);
+
+      actor1
+        .keyframe(0,    { 'transform': 'translateX(0)'  })
+        .keyframe(1000, { 'transform': 'translateX(10)' }
+            ,{ 'transform': 'easeInQuad' });
+
+      var optimizedSegment =
+          Kapi._private.toCSS.generateOptimizedKeyframeSegment(
+              actor1.getKeyframeProperty('transform', 0), 0, 100);
+
+      equal(optimizedSegment
+        ,['  0% {TRANSFORM:translateX(0);VENDORanimation-timing-function: cubic-bezier(.55,.085,.68,.53);}'
+        ,'  100% {TRANSFORM:translateX(10);}'].join('\n')
+        ,'Generated optimized segement');
     });
 
   } ());
